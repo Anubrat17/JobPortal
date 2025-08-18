@@ -66,7 +66,7 @@ app.get("/debug-sentry", function mainHandler(req, res) {
 });
 
 // Clerk webhook route (make sure matches Clerk dashboard URL)
-app.post("/api/webhooks/clerk", clerkWebhooks);
+app.post("/webhooks", clerkWebhooks);
 
 const PORT = process.env.PORT || 5000;
 
