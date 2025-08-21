@@ -60,27 +60,28 @@
 import { Webhook } from "svix";
 import User from "../models/user.js";
 
+// Named export — this is important for `import { clerkWebhooks }`
 export const clerkWebhooks = async (req, res) => {
   try {
-    console.log("➡️ Webhook received!"); // Step 1
+    console.log("➡️ Webhook received!");
 
-    // Verify the webhook (Svix)
+    // Svix verification
     const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
     await webhook.verify(req.body, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"]
     });
-    console.log("✅ Webhook verified successfully"); // Step 2
+    console.log("✅ Webhook verified successfully");
 
     // Parse raw body
     const { data, type } = JSON.parse(req.body.toString());
-    console.log("📌 Event type:", type); // Step 3
-    console.log("📌 User data:", data);  // Step 4
+    console.log("📌 Event type:", type);
+    console.log("📌 User data:", data);
 
     switch(type){
       case "user.created": {
-        console.log("🟢 Creating user in DB:", data.id); // Step 5
+        console.log("🟢 Creating user in DB:", data.id);
         const userData = {
           _id: data.id,
           email: data.email_addresses?.[0]?.email_address || '',
@@ -94,9 +95,9 @@ export const clerkWebhooks = async (req, res) => {
           userData,
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
-        console.log("💾 User saved successfully"); // Step 6
-        res.json({ success: true });
-        break;
+
+        console.log("💾 User saved successfully");
+        return res.json({ success: true });
       }
 
       case "user.updated": {
@@ -104,32 +105,31 @@ export const clerkWebhooks = async (req, res) => {
         const userData = {
           email: data.email_addresses?.[0]?.email_address || '',
           name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
-          image: data.image_url || '',
+          image: data.image_url || ''
         };
         await User.findByIdAndUpdate(data.id, userData);
         console.log("💾 User updated successfully");
-        res.json({ success: true });
-        break;
+        return res.json({ success: true });
       }
 
       case "user.deleted": {
         console.log("🔴 Deleting user from DB:", data.id);
         await User.findByIdAndDelete(data.id);
         console.log("💾 User deleted successfully");
-        res.json({ success: true });
-        break;
+        return res.json({ success: true });
       }
 
       default:
         console.log("⚠️ Event type not handled:", type);
-        res.json({ success: false, message: "Event not handled" });
-        break;
+        return res.json({ success: false, message: "Event not handled" });
     }
   } catch (error) {
     console.error("❌ Webhook error:", error.message);
-    res.status(400).json({ success: false, message: 'Webhook verification failed' });
+    return res.status(400).json({ success: false, message: 'Webhook verification failed' });
   }
 };
+
+
 
 
 
