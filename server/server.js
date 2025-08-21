@@ -1,3 +1,39 @@
+// import "./config/instrument.js";
+// import express from 'express';
+// import cors from 'cors';
+// import 'dotenv/config';
+// import connectDB from './config/db.js';
+// import * as Sentry from "@sentry/node";
+// import { clerkWebhooks } from "./controllers/webhooks.js";
+// // Initialize the express app
+// const app = express();
+
+// //connect to the database
+// await connectDB();
+
+// // Middleware
+// app.use(cors());
+// app.use(express.json());
+
+// //Routes
+// app.get('/', (req, res) => {
+//   res.send('Welcome to the Job Portal API');
+// });
+
+// app.get("/debug-sentry", function mainHandler(req, res) {
+//   throw new Error("My first Sentry error!");
+// });
+
+// app.post('/webhooks',clerkWebhooks);
+// //Port
+// const PORT = process.env.PORT || 5000;
+
+// Sentry.setupExpressErrorHandler(app);
+
+// app.listen(PORT, () => {
+//   console.log(`Server is running on port ${PORT}`);
+// });
+
 import "./config/instrument.js";
 import express from 'express';
 import cors from 'cors';
@@ -5,27 +41,30 @@ import 'dotenv/config';
 import connectDB from './config/db.js';
 import * as Sentry from "@sentry/node";
 import { clerkWebhooks } from "./controllers/webhooks.js";
+
 // Initialize the express app
 const app = express();
 
-//connect to the database
+// Connect to the database
 await connectDB();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // for normal API routes
 
-//Routes
+// Routes
 app.get('/', (req, res) => {
   res.send('Welcome to the Job Portal API');
 });
 
-app.get("/debug-sentry", function mainHandler(req, res) {
+app.get("/debug-sentry", (req, res) => {
   throw new Error("My first Sentry error!");
 });
 
-app.post('/webhooks',clerkWebhooks);
-//Port
+// Webhook route — use raw body for Svix verification
+app.post('/webhooks', express.raw({ type: 'application/json' }), clerkWebhooks);
+
+// Port
 const PORT = process.env.PORT || 5000;
 
 Sentry.setupExpressErrorHandler(app);
