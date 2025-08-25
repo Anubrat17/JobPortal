@@ -55,31 +55,26 @@
 // }
 
 
-
-
 import { Webhook } from "svix";
 import User from "../models/user.js";
 
-// Named export — this is important for `import { clerkWebhooks }`
 export const clerkWebhooks = async (req, res) => {
   try {
     console.log("➡️ Webhook received!");
 
-    // Svix verification
     const webhook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    await webhook.verify(req.body, {
+
+    const evt = await webhook.verify(req.body, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"]
     });
-    console.log("✅ Webhook verified successfully");
 
-    // Parse raw body
-    const { data, type } = JSON.parse(req.body.toString());
+    const { data, type } = evt;
     console.log("📌 Event type:", type);
     console.log("📌 User data:", data);
 
-    switch(type){
+    switch(type) {
       case "user.created": {
         console.log("🟢 Creating user in DB:", data.id);
         const userData = {
@@ -128,6 +123,8 @@ export const clerkWebhooks = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Webhook verification failed' });
   }
 };
+
+
 
 
 
