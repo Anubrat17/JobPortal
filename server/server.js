@@ -34,6 +34,9 @@
 //   console.log(`Server is running on port ${PORT}`);
 // });
 
+
+
+
 import "./config/instrument.js";
 import express from 'express';
 import cors from 'cors';
@@ -42,15 +45,23 @@ import connectDB from './config/db.js';
 import * as Sentry from "@sentry/node";
 import { clerkWebhooks } from "./controllers/webhooks.js";
 
+// Initialize the express app
 const app = express();
 
-// Connect to MongoDB
+//connect to the database
 await connectDB();
 
 // Middleware
 app.use(cors());
 
-// Routes
+// IMPORTANT: For webhooks, we need raw body parsing
+// This middleware handles webhook routes with raw body
+app.use('/webhooks', express.raw({ type: 'application/json' }));
+
+// Regular JSON parsing for other routes
+app.use(express.json());
+
+//Routes
 app.get('/', (req, res) => {
   res.send('Welcome to the Job Portal API');
 });
@@ -59,10 +70,10 @@ app.get("/debug-sentry", function mainHandler(req, res) {
   throw new Error("My first Sentry error!");
 });
 
-// Webhook route uses raw body for Svix verification
-app.post('/webhooks', express.raw({ type: 'application/json' }), clerkWebhooks);
+// Webhook route - this will now receive raw body
+app.post('/webhooks', clerkWebhooks);
 
-// Port
+//Port
 const PORT = process.env.PORT || 5000;
 
 Sentry.setupExpressErrorHandler(app);
@@ -70,10 +81,6 @@ Sentry.setupExpressErrorHandler(app);
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-
-
-
 
 
 
